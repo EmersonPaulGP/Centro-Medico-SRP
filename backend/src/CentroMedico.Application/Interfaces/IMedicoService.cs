@@ -14,4 +14,6 @@ public interface IMedicoService
     Task<MedicoDetalleDto> ObtenerPorIdAsync(int idMedico, CancellationToken cancellationToken = default);
     Task CambiarEstadoActivoAsync(int idMedico, bool activo, CancellationToken cancellationToken = default);
     Task<MedicoDetalleDto> ActualizarEspecialidadesAsync(int idMedico, List<AsignarEspecialidadDto> especialidades, CancellationToken cancellationToken = default);
+    Task<MedicoDetalleDto> AsignarEspecialidadAsync(int idMedico, AsignarEspecialidadDto dto, CancellationToken cancellationToken = default);
+    Task<MedicoDetalleDto> RemoverEspecialidadAsync(int idMedico, int idEspecialidad, CancellationToken cancellationToken = default);
 }

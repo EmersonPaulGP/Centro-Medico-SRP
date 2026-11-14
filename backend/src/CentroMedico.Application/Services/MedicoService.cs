@@ -17,17 +17,20 @@ public class MedicoService : IMedicoService
     private readonly ICatalogoRepository _catalogoRepository;
     private readonly IValidator<CrearMedicoDto> _crearValidator;
     private readonly IValidator<ActualizarMedicoDto> _actualizarValidator;
+    private readonly IValidator<AsignarEspecialidadDto> _asignarEspecialidadValidator;
 
     public MedicoService(
         IMedicoRepository medicoRepository,
         ICatalogoRepository catalogoRepository,
         IValidator<CrearMedicoDto> crearValidator,
-        IValidator<ActualizarMedicoDto> actualizarValidator)
+        IValidator<ActualizarMedicoDto> actualizarValidator,
+        IValidator<AsignarEspecialidadDto> asignarEspecialidadValidator)
     {
         _medicoRepository = medicoRepository;
         _catalogoRepository = catalogoRepository;
         _crearValidator = crearValidator;
         _actualizarValidator = actualizarValidator;
+        _asignarEspecialidadValidator = asignarEspecialidadValidator;
     }
 
     public async Task<MedicoDetalleDto> CrearAsync(CrearMedicoDto dto, CancellationToken cancellationToken = default)
@@ -174,6 +177,15 @@ public class MedicoService : IMedicoService
             throw new BusinessRuleException("Debe asignar al menos una especialidad médica al médico");
         }
 
+        foreach (var espDto in especialidades)
+        {
+            var valResult = await _asignarEspecialidadValidator.ValidateAsync(espDto, cancellationToken);
+            if (!valResult.IsValid)
+            {
+                throw new FluentValidation.ValidationException(valResult.Errors);
+            }
+        }
+
         var especialidadesUnicas = especialidades.DistinctBy(e => e.IdEspecialidad).ToList();
         var catalogoEspecialidades = new Dictionary<int, Especialidad>();
 
@@ -196,6 +208,77 @@ public class MedicoService : IMedicoService
         });
 
         await _medicoRepository.ActualizarEspecialidadesAsync(idMedico, nuevas, cancellationToken);
+
+        medico.FechaModificacion = DateTime.UtcNow;
+        await _medicoRepository.ActualizarAsync(medico, cancellationToken);
+
+        var actualizado = await _medicoRepository.ObtenerConEspecialidadesPorIdAsync(idMedico, cancellationToken)
+            ?? medico;
+
+        return MapearAMedicoDetalleDto(actualizado);
+    }
+
+    public async Task<MedicoDetalleDto> AsignarEspecialidadAsync(
+        int idMedico,
+        AsignarEspecialidadDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var validationResult = await _asignarEspecialidadValidator.ValidateAsync(dto, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            throw new FluentValidation.ValidationException(validationResult.Errors);
+        }
+
+        var medico = await _medicoRepository.ObtenerConEspecialidadesPorIdAsync(idMedico, cancellationToken)
+            ?? throw new NotFoundException("Medico", idMedico);
+
+        if (medico.Especialidades.Any(e => e.IdEspecialidad == dto.IdEspecialidad))
+        {
+            throw new BusinessRuleException($"El médico ya tiene asignada la especialidad con ID {dto.IdEspecialidad}");
+        }
+
+        var especialidad = await _catalogoRepository.ObtenerEspecialidadPorIdAsync(dto.IdEspecialidad, cancellationToken);
+        if (especialidad == null || !especialidad.Activo)
+        {
+            throw new BusinessRuleException($"La especialidad médica con ID {dto.IdEspecialidad} no existe o no se encuentra activa");
+        }
+
+        var nuevaRelacion = new MedicoEspecialidad
+        {
+            IdMedico = idMedico,
+            IdEspecialidad = dto.IdEspecialidad,
+            Descripcion = string.IsNullOrWhiteSpace(dto.Descripcion) ? null : dto.Descripcion.Trim(),
+            Especialidad = especialidad
+        };
+
+        await _medicoRepository.AgregarEspecialidadAsync(nuevaRelacion, cancellationToken);
+
+        medico.FechaModificacion = DateTime.UtcNow;
+        await _medicoRepository.ActualizarAsync(medico, cancellationToken);
+
+        var actualizado = await _medicoRepository.ObtenerConEspecialidadesPorIdAsync(idMedico, cancellationToken)
+            ?? medico;
+
+        return MapearAMedicoDetalleDto(actualizado);
+    }
+
+    public async Task<MedicoDetalleDto> RemoverEspecialidadAsync(
+        int idMedico,
+        int idEspecialidad,
+        CancellationToken cancellationToken = default)
+    {
+        var medico = await _medicoRepository.ObtenerConEspecialidadesPorIdAsync(idMedico, cancellationToken)
+            ?? throw new NotFoundException("Medico", idMedico);
+
+        var relacion = medico.Especialidades.FirstOrDefault(e => e.IdEspecialidad == idEspecialidad)
+            ?? throw new NotFoundException("Especialidad asignada al médico", idEspecialidad);
+
+        if (medico.Especialidades.Count <= 1)
+        {
+            throw new BusinessRuleException("No es posible remover la especialidad. El médico debe conservar al menos una especialidad médica asignada.");
+        }
+
+        await _medicoRepository.EliminarEspecialidadAsync(idMedico, idEspecialidad, cancellationToken);
 
         medico.FechaModificacion = DateTime.UtcNow;
         await _medicoRepository.ActualizarAsync(medico, cancellationToken);

@@ -97,6 +97,18 @@ public class MedicosController : ControllerBase
     }
 
     /// <summary>
+    /// Realiza la baja lógica (activo = false) de un profesional médico según la convención RESTful DELETE.
+    /// </summary>
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DarDeBaja([FromRoute] int id, CancellationToken cancellationToken)
+    {
+        await _medicoService.CambiarEstadoActivoAsync(id, false, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
     /// Asigna o reemplaza las especialidades médicas vinculadas a un médico.
     /// </summary>
     [HttpPut("{id:int}/especialidades")]
@@ -110,5 +122,38 @@ public class MedicosController : ControllerBase
     {
         var actualizado = await _medicoService.ActualizarEspecialidadesAsync(id, especialidades, cancellationToken);
         return Ok(ApiResponse<MedicoDetalleDto>.Ok(actualizado, "Especialidades médicas actualizadas exitosamente."));
+    }
+
+    /// <summary>
+    /// Asigna una especialidad médica adicional a un profesional médico existente.
+    /// </summary>
+    [HttpPost("{id:int}/especialidades")]
+    [ProducesResponseType(typeof(ApiResponse<MedicoDetalleDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> AsignarEspecialidad(
+        [FromRoute] int id,
+        [FromBody] AsignarEspecialidadDto dto,
+        CancellationToken cancellationToken)
+    {
+        var actualizado = await _medicoService.AsignarEspecialidadAsync(id, dto, cancellationToken);
+        return Ok(ApiResponse<MedicoDetalleDto>.Ok(actualizado, "Especialidad médica asignada exitosamente al profesional."));
+    }
+
+    /// <summary>
+    /// Remueve una especialidad médica específica asignada a un profesional médico.
+    /// </summary>
+    [HttpDelete("{id:int}/especialidades/{idEspecialidad:int}")]
+    [ProducesResponseType(typeof(ApiResponse<MedicoDetalleDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemoverEspecialidad(
+        [FromRoute] int id,
+        [FromRoute] int idEspecialidad,
+        CancellationToken cancellationToken)
+    {
+        var actualizado = await _medicoService.RemoverEspecialidadAsync(id, idEspecialidad, cancellationToken);
+        return Ok(ApiResponse<MedicoDetalleDto>.Ok(actualizado, "Especialidad médica removida exitosamente del profesional."));
     }
 }

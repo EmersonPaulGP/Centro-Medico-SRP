@@ -112,4 +112,22 @@ public class MedicoRepository : IMedicoRepository
         await _context.MedicosEspecialidades.AddRangeAsync(nuevasEspecialidades, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task AgregarEspecialidadAsync(MedicoEspecialidad especialidad, CancellationToken cancellationToken = default)
+    {
+        await _context.MedicosEspecialidades.AddAsync(especialidad, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task EliminarEspecialidadAsync(int idMedico, int idEspecialidad, CancellationToken cancellationToken = default)
+    {
+        var existente = await _context.MedicosEspecialidades
+            .FirstOrDefaultAsync(me => me.IdMedico == idMedico && me.IdEspecialidad == idEspecialidad, cancellationToken);
+
+        if (existente != null)
+        {
+            _context.MedicosEspecialidades.Remove(existente);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+    }
 }

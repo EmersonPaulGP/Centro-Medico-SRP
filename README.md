@@ -142,10 +142,13 @@ Manejadas automáticamente por el `GlobalExceptionHandlerMiddleware` sin exponer
     - `POST /api/v1/medicos`: Registro de médico con especialidades iniciales (HTTP 201 Created).
     - `PUT /api/v1/medicos/{id}`: Actualización de datos personales y de contacto.
     - `PATCH /api/v1/medicos/{id}/estado`: Toggle de estado activo / baja lógica.
-    - `PUT /api/v1/medicos/{id}/especialidades`: Actualización de especialidades asignadas.
+    - `DELETE /api/v1/medicos/{id}`: Baja lógica conforme a convención RESTful (HTTP 204 No Content).
+    - `PUT /api/v1/medicos/{id}/especialidades`: Reemplazo masivo de especialidades asignadas.
+    - `POST /api/v1/medicos/{id}/especialidades`: Asignación de especialidad adicional con validaciones de existencia y estado activo.
+    - `DELETE /api/v1/medicos/{id}/especialidades/{idEspecialidad}`: Remoción de especialidad con regla de retención de al menos una especialidad.
 * [x] **Pruebas Automatizadas:**
-  - Cobertura total de 36 pruebas automáticas (100% aprobadas).
-  - Verificación de criterios Gherkin para registro exitoso, control de duplicados y filtros de baja lógica.
+  - Cobertura total de 61 pruebas automáticas (100% aprobadas en xUnit).
+  - Verificación de criterios Gherkin para registro exitoso, control de duplicados, asignación/remoción de especialidades y filtros de baja lógica.
 
 ---
 

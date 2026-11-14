@@ -38,13 +38,6 @@ public class CrearMedicoValidator : AbstractValidator<CrearMedicoDto>
             .Must(e => e != null && e.Count > 0).WithMessage("Debe asignar al menos una especialidad al médico.");
 
         RuleForEach(x => x.Especialidades)
-            .ChildRules(esp =>
-            {
-                esp.RuleFor(e => e.IdEspecialidad)
-                    .GreaterThan(0).WithMessage("El identificador de la especialidad debe ser mayor a 0.");
-                esp.RuleFor(e => e.Descripcion)
-                    .MaximumLength(100).When(e => !string.IsNullOrEmpty(e.Descripcion))
-                    .WithMessage("La descripción de la especialidad asignada no puede superar 100 caracteres.");
-            });
+            .SetValidator(new AsignarEspecialidadValidator());
     }
 }

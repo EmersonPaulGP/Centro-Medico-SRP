@@ -37,8 +37,9 @@ public class MedicoServiceTests
 
         var crearValidator = new CrearMedicoValidator();
         var actualizarValidator = new ActualizarMedicoValidator();
+        var asignarValidator = new AsignarEspecialidadValidator();
 
-        _service = new MedicoService(_fakeMedicoRepo, _fakeCatalogoRepo, crearValidator, actualizarValidator);
+        _service = new MedicoService(_fakeMedicoRepo, _fakeCatalogoRepo, crearValidator, actualizarValidator, asignarValidator);
     }
 
     [Fact]
@@ -203,6 +204,150 @@ public class MedicoServiceTests
         Assert.Equal(2, result.TotalRegistros);
         Assert.All(result.Items, m => Assert.True(m.Activo));
     }
+
+    [Fact]
+    public async Task ActualizarAsync_Exitoso_DebeActualizarDatosPersonalesYFechaModificacion()
+    {
+        // Arrange
+        var medico = new Medico
+        {
+            IdMedico = 1,
+            Matricula = "MN-1234",
+            Dni = "12345678",
+            Nombre = "Juan",
+            Apellido = "Pérez",
+            Telefono = "111",
+            Email = "juan@test.com",
+            Activo = true
+        };
+        _fakeMedicoRepo.Medicos.Add(medico);
+
+        var dto = new ActualizarMedicoDto("Juan Carlos", "Pérez Gómez", "222", "jc.perez@test.com");
+
+        // Act
+        var result = await _service.ActualizarAsync(1, dto);
+
+        // Assert
+        Assert.Equal("Juan Carlos", result.Nombre);
+        Assert.Equal("Pérez Gómez", result.Apellido);
+        Assert.Equal("222", result.Telefono);
+        Assert.Equal("jc.perez@test.com", result.Email);
+        Assert.NotNull(result.FechaModificacion);
+    }
+
+    [Fact]
+    public async Task AsignarEspecialidadAsync_Exitoso_DebeAgregarNuevaEspecialidad()
+    {
+        // Arrange
+        _fakeCatalogoRepo.Especialidades.Add(new Especialidad { IdEspecialidad = 4, Nombre = "Cardiología", Activo = true });
+
+        var medico = new Medico
+        {
+            IdMedico = 20,
+            Matricula = "MN-20202",
+            Dni = "20202020",
+            Nombre = "Laura",
+            Apellido = "Fernández",
+            Activo = true,
+            Especialidades = new List<MedicoEspecialidad>
+            {
+                new() { IdMedico = 20, IdEspecialidad = 2, Especialidad = _fakeCatalogoRepo.Especialidades.First(e => e.IdEspecialidad == 2) }
+            }
+        };
+        _fakeMedicoRepo.Medicos.Add(medico);
+
+        var dto = new AsignarEspecialidadDto(4, "Cardióloga clínica");
+
+        // Act
+        var result = await _service.AsignarEspecialidadAsync(20, dto);
+
+        // Assert
+        Assert.Equal(2, result.Especialidades.Count);
+        Assert.Contains(result.Especialidades, e => e.IdEspecialidad == 4 && e.Nombre == "Cardiología");
+    }
+
+    [Fact]
+    public async Task AsignarEspecialidadAsync_EspecialidadYaAsignada_DebeLanzarBusinessRuleException()
+    {
+        // Arrange
+        var medico = new Medico
+        {
+            IdMedico = 21,
+            Matricula = "MN-21212",
+            Dni = "21212121",
+            Nombre = "Esteban",
+            Apellido = "Quito",
+            Activo = true,
+            Especialidades = new List<MedicoEspecialidad>
+            {
+                new() { IdMedico = 21, IdEspecialidad = 2, Especialidad = _fakeCatalogoRepo.Especialidades.First(e => e.IdEspecialidad == 2) }
+            }
+        };
+        _fakeMedicoRepo.Medicos.Add(medico);
+
+        var dto = new AsignarEspecialidadDto(2, "Repetida");
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => _service.AsignarEspecialidadAsync(21, dto));
+        Assert.Contains("ya tiene asignada la especialidad", ex.Message);
+    }
+
+    [Fact]
+    public async Task RemoverEspecialidadAsync_Exitoso_DebeEliminarEspecialidad()
+    {
+        // Arrange
+        var esp2 = _fakeCatalogoRepo.Especialidades.First(e => e.IdEspecialidad == 2);
+        _fakeCatalogoRepo.Especialidades.Add(new Especialidad { IdEspecialidad = 5, Nombre = "Pediatría", Activo = true });
+        var esp5 = _fakeCatalogoRepo.Especialidades.First(e => e.IdEspecialidad == 5);
+
+        var medico = new Medico
+        {
+            IdMedico = 30,
+            Matricula = "MN-30303",
+            Dni = "30303030",
+            Nombre = "Marina",
+            Apellido = "Silva",
+            Activo = true,
+            Especialidades = new List<MedicoEspecialidad>
+            {
+                new() { IdMedico = 30, IdEspecialidad = 2, Especialidad = esp2 },
+                new() { IdMedico = 30, IdEspecialidad = 5, Especialidad = esp5 }
+            }
+        };
+        _fakeMedicoRepo.Medicos.Add(medico);
+
+        // Act
+        var result = await _service.RemoverEspecialidadAsync(30, 5);
+
+        // Assert
+        Assert.Single(result.Especialidades);
+        Assert.Equal(2, result.Especialidades[0].IdEspecialidad);
+    }
+
+    [Fact]
+    public async Task RemoverEspecialidadAsync_NoPuedeRemoverUnicaEspecialidad_DebeLanzarBusinessRuleException()
+    {
+        // Arrange
+        var esp2 = _fakeCatalogoRepo.Especialidades.First(e => e.IdEspecialidad == 2);
+        var medico = new Medico
+        {
+            IdMedico = 31,
+            Matricula = "MN-31313",
+            Dni = "31313131",
+            Nombre = "Rodrigo",
+            Apellido = "Paz",
+            Activo = true,
+            Especialidades = new List<MedicoEspecialidad>
+            {
+                new() { IdMedico = 31, IdEspecialidad = 2, Especialidad = esp2 }
+            }
+        };
+        _fakeMedicoRepo.Medicos.Add(medico);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => _service.RemoverEspecialidadAsync(31, 2));
+        Assert.Contains("El médico debe conservar al menos una especialidad médica asignada", ex.Message);
+    }
 }
 
 public class FakeMedicoRepository : IMedicoRepository
@@ -296,6 +441,30 @@ public class FakeMedicoRepository : IMedicoRepository
         if (medico != null)
         {
             medico.Especialidades = nuevasEspecialidades.ToList();
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task AgregarEspecialidadAsync(MedicoEspecialidad especialidad, CancellationToken cancellationToken = default)
+    {
+        var medico = Medicos.FirstOrDefault(m => m.IdMedico == especialidad.IdMedico);
+        if (medico != null)
+        {
+            medico.Especialidades.Add(especialidad);
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task EliminarEspecialidadAsync(int idMedico, int idEspecialidad, CancellationToken cancellationToken = default)
+    {
+        var medico = Medicos.FirstOrDefault(m => m.IdMedico == idMedico);
+        if (medico != null)
+        {
+            var esp = medico.Especialidades.FirstOrDefault(e => e.IdEspecialidad == idEspecialidad);
+            if (esp != null)
+            {
+                medico.Especialidades.Remove(esp);
+            }
         }
         return Task.CompletedTask;
     }

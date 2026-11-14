@@ -20,4 +20,6 @@ public interface IMedicoRepository
     Task<Medico> CrearAsync(Medico medico, CancellationToken cancellationToken = default);
     Task ActualizarAsync(Medico medico, CancellationToken cancellationToken = default);
     Task ActualizarEspecialidadesAsync(int idMedico, IEnumerable<MedicoEspecialidad> nuevasEspecialidades, CancellationToken cancellationToken = default);
+    Task AgregarEspecialidadAsync(MedicoEspecialidad especialidad, CancellationToken cancellationToken = default);
+    Task EliminarEspecialidadAsync(int idMedico, int idEspecialidad, CancellationToken cancellationToken = default);
 }

@@ -83,6 +83,67 @@ public class MedicosControllerTests
         var apiResponse = Assert.IsType<ApiResponse<object>>(okResult.Value);
         Assert.True(apiResponse.Success);
     }
+
+    [Fact]
+    public async Task DarDeBaja_DebeRetornar204NoContent()
+    {
+        var actionResult = await _controller.DarDeBaja(1, CancellationToken.None);
+
+        var noContentResult = Assert.IsType<NoContentResult>(actionResult);
+        Assert.Equal(StatusCodes.Status204NoContent, noContentResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task ActualizarMedico_DebeRetornar200Ok()
+    {
+        var dto = new ActualizarMedicoDto("Pedro", "Gómez", "12345", "pedro@test.com");
+        var actionResult = await _controller.ActualizarMedico(1, dto, CancellationToken.None);
+
+        var okResult = Assert.IsType<OkObjectResult>(actionResult);
+        Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+
+        var apiResponse = Assert.IsType<ApiResponse<MedicoDetalleDto>>(okResult.Value);
+        Assert.True(apiResponse.Success);
+        Assert.Equal("Pedro", apiResponse.Data!.Nombre);
+    }
+
+    [Fact]
+    public async Task ActualizarEspecialidades_DebeRetornar200Ok()
+    {
+        var lista = new List<AsignarEspecialidadDto> { new(1, "Especialista") };
+        var actionResult = await _controller.ActualizarEspecialidades(1, lista, CancellationToken.None);
+
+        var okResult = Assert.IsType<OkObjectResult>(actionResult);
+        Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+
+        var apiResponse = Assert.IsType<ApiResponse<MedicoDetalleDto>>(okResult.Value);
+        Assert.True(apiResponse.Success);
+    }
+
+    [Fact]
+    public async Task AsignarEspecialidad_DebeRetornar200Ok()
+    {
+        var dto = new AsignarEspecialidadDto(2, "Cardiología");
+        var actionResult = await _controller.AsignarEspecialidad(1, dto, CancellationToken.None);
+
+        var okResult = Assert.IsType<OkObjectResult>(actionResult);
+        Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+
+        var apiResponse = Assert.IsType<ApiResponse<MedicoDetalleDto>>(okResult.Value);
+        Assert.True(apiResponse.Success);
+    }
+
+    [Fact]
+    public async Task RemoverEspecialidad_DebeRetornar200Ok()
+    {
+        var actionResult = await _controller.RemoverEspecialidad(1, 2, CancellationToken.None);
+
+        var okResult = Assert.IsType<OkObjectResult>(actionResult);
+        Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+
+        var apiResponse = Assert.IsType<ApiResponse<MedicoDetalleDto>>(okResult.Value);
+        Assert.True(apiResponse.Success);
+    }
 }
 
 public class FakeMedicoService : IMedicoService
@@ -157,6 +218,42 @@ public class FakeMedicoService : IMedicoService
     }
 
     public Task<MedicoDetalleDto> ActualizarEspecialidadesAsync(int idMedico, List<AsignarEspecialidadDto> especialidades, CancellationToken cancellationToken = default)
+    {
+        var detalle = new MedicoDetalleDto(
+            idMedico,
+            "MN-1",
+            "D1",
+            "A",
+            "B",
+            null,
+            null,
+            true,
+            DateTime.UtcNow,
+            DateTime.UtcNow,
+            new List<EspecialidadAsignadaDto>()
+        );
+        return Task.FromResult(detalle);
+    }
+
+    public Task<MedicoDetalleDto> AsignarEspecialidadAsync(int idMedico, AsignarEspecialidadDto dto, CancellationToken cancellationToken = default)
+    {
+        var detalle = new MedicoDetalleDto(
+            idMedico,
+            "MN-1",
+            "D1",
+            "A",
+            "B",
+            null,
+            null,
+            true,
+            DateTime.UtcNow,
+            DateTime.UtcNow,
+            new List<EspecialidadAsignadaDto> { new(dto.IdEspecialidad, "Especialidad", dto.Descripcion) }
+        );
+        return Task.FromResult(detalle);
+    }
+
+    public Task<MedicoDetalleDto> RemoverEspecialidadAsync(int idMedico, int idEspecialidad, CancellationToken cancellationToken = default)
     {
         var detalle = new MedicoDetalleDto(
             idMedico,
