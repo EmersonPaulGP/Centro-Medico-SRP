@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
         services.AddScoped<ICatalogoService, CatalogoService>();
+        services.AddScoped<IMedicoService, MedicoService>();
 
         return services;
     }

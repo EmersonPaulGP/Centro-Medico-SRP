@@ -13,7 +13,7 @@ backend/
 ├── CentroMedico.sln
 ├── src/
 │   ├── CentroMedico.Domain/           # Capa de Dominio (Entidades puras, Enums, Contratos de repositorios, Excepciones de negocio)
-│   ├── CentroMedico.Application/      # Capa de Aplicación (Casos de uso, DTOs, Validaciones FluentValidation, ApiResponse)
+│   ├── CentroMedico.Application/      # Capa de Aplicación (Casos de uso, DTOs, Validaciones FluentValidation, ApiResponse, Paginación)
 │   ├── CentroMedico.Infrastructure/   # Capa de Infraestructura (EF Core 8, DbContext, Mapeos Fluent API, Repositorios)
 │   └── CentroMedico.Api/              # Capa de Presentación / Entrada (Controllers RESTful, Middlewares globales, Swagger)
 └── tests/
@@ -117,9 +117,35 @@ Manejadas automáticamente por el `GlobalExceptionHandlerMiddleware` sin exponer
     - `GET /api/v1/catalogos/conceptos-pago`: Conceptos de cobro clínico y laboratorio.
     - `GET /api/v1/catalogos/estados-pago`: Estados de recaudación y facturación.
     - `POST /api/v1/catalogos/especialidades`: Registro de nueva especialidad con respuesta HTTP 201 Created.
+
+### Feature 003: Gestión de Médicos y Especialidades
+* [x] **Dominio:**
+  - Entidades `Medico` y `MedicoEspecialidad` (relación N:N) con políticas de auditoría y soft delete (`activo`).
+  - Contrato `IMedicoRepository` con operaciones de búsqueda con filtros, paginación, unicidad y asignación de especialidades.
+* [x] **Infraestructura:**
+  - Mapeos Fluent API `MedicoConfiguration` (índices únicos en matrícula y DNI) y `MedicoEspecialidadConfiguration` (clave primaria compuesta `[idMedico, idEspecialidad]`).
+  - Registro de `DbSet<Medico>` y `DbSet<MedicoEspecialidad>` en `CentroMedicoDbContext`.
+  - Implementación de repositorio `MedicoRepository` con `Include` de especialidades y consultas paginadas optimizadas.
+* [x] **Aplicación:**
+  - Modelo de paginación reutilizable `PagedResult<T>`.
+  - DTOs especializados: `CrearMedicoDto`, `ActualizarMedicoDto`, `MedicoDetalleDto`, `MedicoFiltroDto`, `AsignarEspecialidadDto`, `EspecialidadAsignadaDto`, `CambiarEstadoMedicoDto`.
+  - Validadores FluentValidation `CrearMedicoValidator` y `ActualizarMedicoValidator` (obligatoriedad de matrícula, DNI, nombre, apellido y al menos 1 especialidad).
+  - Servicio `MedicoService` con aplicación de reglas de negocio duras:
+    - Validación de unicidad de matrícula profesional (HTTP 400 `BusinessRuleException`).
+    - Validación de unicidad de DNI (HTTP 400 `BusinessRuleException`).
+    - Validación de existencia y estado activo de las especialidades médicas asignadas.
+    - Política estricta de baja lógica (`activo = false`) sin borrado físico de la historia clínica.
+* [x] **API y Presentación:**
+  - Endpoints RESTful en `MedicosController` (`/api/v1/medicos`):
+    - `GET /api/v1/medicos`: Listado paginado con filtros por texto, especialidad y estado activo.
+    - `GET /api/v1/medicos/{id}`: Detalle completo del médico y sus especialidades.
+    - `POST /api/v1/medicos`: Registro de médico con especialidades iniciales (HTTP 201 Created).
+    - `PUT /api/v1/medicos/{id}`: Actualización de datos personales y de contacto.
+    - `PATCH /api/v1/medicos/{id}/estado`: Toggle de estado activo / baja lógica.
+    - `PUT /api/v1/medicos/{id}/especialidades`: Actualización de especialidades asignadas.
 * [x] **Pruebas Automatizadas:**
-  - Proyecto de pruebas `CentroMedico.UnitTests` con 16 casos de prueba (100% aprobadas).
-  - Validación de escenarios Gherkin para especialidades activas y detección de duplicados.
+  - Cobertura total de 36 pruebas automáticas (100% aprobadas).
+  - Verificación de criterios Gherkin para registro exitoso, control de duplicados y filtros de baja lógica.
 
 ---
 
@@ -152,9 +178,5 @@ dotnet run --launch-profile http
 ### Endpoints de Verificación:
 * **Health Check:** `http://localhost:5235/api/v1/health`
 * **Swagger UI:** `http://localhost:5235/swagger`
-* **Catálogos Base:**
-  * `http://localhost:5235/api/v1/catalogos/paises`
-  * `http://localhost:5235/api/v1/catalogos/especialidades`
-  * `http://localhost:5235/api/v1/catalogos/estados-turno`
-  * `http://localhost:5235/api/v1/catalogos/conceptos-pago`
-  * `http://localhost:5235/api/v1/catalogos/estados-pago`
+* **Catálogos:** `http://localhost:5235/api/v1/catalogos`
+* **Médicos:** `http://localhost:5235/api/v1/medicos`

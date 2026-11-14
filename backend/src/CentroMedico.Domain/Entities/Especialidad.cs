@@ -9,4 +9,6 @@ public class Especialidad
     public string Nombre { get; set; } = string.Empty;
     public string? Descripcion { get; set; }
     public bool Activo { get; set; } = true;
+
+    public ICollection<MedicoEspecialidad> MedicosEspecialidades { get; set; } = new List<MedicoEspecialidad>();
 }
