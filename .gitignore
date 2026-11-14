@@ -1,0 +1,23 @@
+## Reglas de exclusión requeridas
+spec/
+CentroMedico.sql
+
+## Build and Visual Studio / Rider / VS Code
+[Bb]in/
+[Oo]bj/
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## Test results
+TestResults/
+[Tt]est[Rr]esult*/
+
+## OS generated
+.DS_Store
+Thumbs.db
