@@ -6,16 +6,18 @@ Sistema integral backend diseñado bajo principios de **Clean Architecture** y *
 
 ## 🏗️ 1. Arquitectura del Backend
 
-La solución está construida sobre **.NET 8 (C# 12)** y desacoplada en cuatro capas independientes:
+La solución está construida sobre **.NET 8 (C# 12)** y desacoplada en capas independientes con estricta inversión de dependencias:
 
 ```
 backend/
 ├── CentroMedico.sln
-└── src/
-    ├── CentroMedico.Domain/           # Capa de Dominio (Entidades puras, Enums, Excepciones de negocio)
-    ├── CentroMedico.Application/      # Capa de Aplicación (Casos de uso, DTOs, Validaciones FluentValidation, ApiResponse)
-    ├── CentroMedico.Infrastructure/   # Capa de Infraestructura (EF Core 8, DbContext, Mapeos, Repositorios)
-    └── CentroMedico.Api/              # Capa de Presentación / Entrada (Controllers RESTful, Middlewares globales, Swagger)
+├── src/
+│   ├── CentroMedico.Domain/           # Capa de Dominio (Entidades puras, Enums, Contratos de repositorios, Excepciones de negocio)
+│   ├── CentroMedico.Application/      # Capa de Aplicación (Casos de uso, DTOs, Validaciones FluentValidation, ApiResponse)
+│   ├── CentroMedico.Infrastructure/   # Capa de Infraestructura (EF Core 8, DbContext, Mapeos Fluent API, Repositorios)
+│   └── CentroMedico.Api/              # Capa de Presentación / Entrada (Controllers RESTful, Middlewares globales, Swagger)
+└── tests/
+    └── CentroMedico.UnitTests/        # Pruebas unitarias y de integración (xUnit, FluentValidation.TestHelper)
 ```
 
 ### Reglas de Dependencia:
@@ -34,6 +36,7 @@ backend/
 * **ORM:** Entity Framework Core 8 (`Microsoft.EntityFrameworkCore.SqlServer`)
 * **Validación:** FluentValidation (`FluentValidation.AspNetCore`)
 * **Documentación Interactiva:** Swagger / OpenAPI v3 (`Swashbuckle.AspNetCore`)
+* **Testing:** xUnit v2, Microsoft.NET.Test.Sdk
 * **Base de Datos:** Microsoft SQL Server 2022 (Base de datos: `CentroMedico`)
 
 ---
@@ -43,7 +46,7 @@ backend/
 El modelo de datos se inicializa a partir del script [`CentroMedico.sql`](./CentroMedico.sql), que implementa:
 * **Catálogos Normalizados:** `Pais`, `Especialidad`, `TurnoEstado`, `Concepto`, `PagoEstado`.
 * **Entidades Principales:** `Medico`, `MedicoEspecialidad` (N:N), `Paciente`, `PacienteInfo` (1:1 médica), `Turno`, `Historia`, `Pago`.
-* **Políticas de Integridad:** Claves foráneas indexadas, constraints únicas (DNI, Matrícula), auditoría temporal (`fechaAlta`, `fechaModificacion`) y banderas de Soft Delete (`activo`).
+* **Políticas de Integridad:** Claves foráneas indexadas, constraints únicas (DNI, Matrícula, Nombre de especialidad), auditoría temporal (`fechaAlta`, `fechaModificacion`) y banderas de Soft Delete (`activo`).
 
 ---
 
@@ -93,9 +96,34 @@ Manejadas automáticamente por el `GlobalExceptionHandlerMiddleware` sin exponer
 * [x] Implementación del endpoint de salud `GET /api/v1/health` con verificación activa de conexión a SQL Server (`CanConnectAsync`).
 * [x] Configuración y habilitación de Swagger UI en `/swagger`.
 
+### Feature 002: Catálogos del Sistema
+* [x] **Dominio:**
+  - Entidades maestras: `Pais`, `Especialidad`, `TurnoEstado`, `Concepto`, `PagoEstado`.
+  - Contrato de persistencia desacoplado `ICatalogoRepository`.
+* [x] **Infraestructura:**
+  - Mapeos Fluent API con tipos de columna nativos (`char(3)`, `varchar`, `identity`, `constraints`).
+  - Registro de `DbSet<...>` en `CentroMedicoDbContext`.
+  - Implementación optimizada de repositorio con consultas de solo lectura (`AsNoTracking`) en `CatalogoRepository`.
+* [x] **Aplicación:**
+  - DTOs inmutables: `PaisDto`, `EspecialidadDto`, `CrearEspecialidadDto`, `CatalogoGenericoDto`.
+  - Contrato de servicio `ICatalogoService` e implementación `CatalogoService`.
+  - Validador `CrearEspecialidadValidator` con FluentValidation (nombre obligatorio, máx 60; descripción opcional máx 200).
+  - Regla de negocio de no duplicidad de especialidades médicas (lanza `BusinessRuleException` -> HTTP 400).
+* [x] **API y Presentación:**
+  - Endpoints RESTful en `CatalogosController` (`/api/v1/catalogos`):
+    - `GET /api/v1/catalogos/paises`: Países ordenados alfabéticamente.
+    - `GET /api/v1/catalogos/especialidades`: Especialidades médicas (filtro `soloActivas = true` por defecto).
+    - `GET /api/v1/catalogos/estados-turno`: Estados para el motor de citas (`Pendiente`, `Realizado`, etc.).
+    - `GET /api/v1/catalogos/conceptos-pago`: Conceptos de cobro clínico y laboratorio.
+    - `GET /api/v1/catalogos/estados-pago`: Estados de recaudación y facturación.
+    - `POST /api/v1/catalogos/especialidades`: Registro de nueva especialidad con respuesta HTTP 201 Created.
+* [x] **Pruebas Automatizadas:**
+  - Proyecto de pruebas `CentroMedico.UnitTests` con 16 casos de prueba (100% aprobadas).
+  - Validación de escenarios Gherkin para especialidades activas y detección de duplicados.
+
 ---
 
-## 💻 6. Cómo Ejecutar el Proyecto
+## 💻 6. Cómo Ejecutar el Proyecto y Pruebas
 
 ### Prerrequisitos:
 1. .NET 8 SDK instalado.
@@ -113,7 +141,10 @@ cd backend
 # 2. Restaurar dependencias y compilar
 dotnet build
 
-# 3. Iniciar la Web API
+# 3. Ejecutar la suite de pruebas unitarias
+dotnet test
+
+# 4. Iniciar la Web API
 cd src/CentroMedico.Api
 dotnet run --launch-profile http
 ```
@@ -121,3 +152,9 @@ dotnet run --launch-profile http
 ### Endpoints de Verificación:
 * **Health Check:** `http://localhost:5235/api/v1/health`
 * **Swagger UI:** `http://localhost:5235/swagger`
+* **Catálogos Base:**
+  * `http://localhost:5235/api/v1/catalogos/paises`
+  * `http://localhost:5235/api/v1/catalogos/especialidades`
+  * `http://localhost:5235/api/v1/catalogos/estados-turno`
+  * `http://localhost:5235/api/v1/catalogos/conceptos-pago`
+  * `http://localhost:5235/api/v1/catalogos/estados-pago`

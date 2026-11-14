@@ -1,10 +1,12 @@
 using CentroMedico.Api.Middlewares;
+using CentroMedico.Application;
 using CentroMedico.Infrastructure;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Inyección de infraestructura y base de datos (EF Core)
+// Inyección de servicios de aplicación y de infraestructura
+builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // Registro de Controladores con configuración de JSON

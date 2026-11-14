@@ -1,4 +1,6 @@
+using CentroMedico.Domain.Interfaces;
 using CentroMedico.Infrastructure.Context;
+using CentroMedico.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +16,9 @@ public static class DependencyInjection
 
         services.AddDbContext<CentroMedicoDbContext>(options =>
             options.UseSqlServer(connectionString));
+
+        // Registro de repositorios de infraestructura
+        services.AddScoped<ICatalogoRepository, CatalogoRepository>();
 
         return services;
     }
