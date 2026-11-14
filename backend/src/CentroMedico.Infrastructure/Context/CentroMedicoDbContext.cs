@@ -17,6 +17,7 @@ public class CentroMedicoDbContext : DbContext
     public DbSet<PagoEstado> PagosEstados => Set<PagoEstado>();
     public DbSet<Medico> Medicos => Set<Medico>();
     public DbSet<MedicoEspecialidad> MedicosEspecialidades => Set<MedicoEspecialidad>();
+    public DbSet<Paciente> Pacientes => Set<Paciente>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

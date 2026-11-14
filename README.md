@@ -147,8 +147,35 @@ Manejadas automáticamente por el `GlobalExceptionHandlerMiddleware` sin exponer
     - `POST /api/v1/medicos/{id}/especialidades`: Asignación de especialidad adicional con validaciones de existencia y estado activo.
     - `DELETE /api/v1/medicos/{id}/especialidades/{idEspecialidad}`: Remoción de especialidad con regla de retención de al menos una especialidad.
 * [x] **Pruebas Automatizadas:**
-  - Cobertura total de 61 pruebas automáticas (100% aprobadas en xUnit).
+  - Cobertura total de pruebas automáticas (100% aprobadas en xUnit).
   - Verificación de criterios Gherkin para registro exitoso, control de duplicados, asignación/remoción de especialidades y filtros de baja lógica.
+
+### Feature 004: Gestión de Pacientes
+* [x] **Dominio:**
+  - Entidad `Paciente` con cálculo de propiedad `Edad` a partir de `FNacimiento`, relación con catálogo `Pais` y campos de auditoría.
+  - Contrato `IPacienteRepository` con soporte para verificación de DNI, búsqueda por ID, DNI y paginación con filtros.
+* [x] **Infraestructura:**
+  - Mapeo Fluent API `PacienteConfiguration` con índice único en `dni` (`UQ_Paciente_Dni`), clave foránea restrictiva hacia `Pais` (`FK_Paciente_Pais`) e ignorado de propiedad calculada `Edad`.
+  - Registro de `DbSet<Paciente>` en `CentroMedicoDbContext`.
+  - Implementación `PacienteRepository` con consultas asíncronas paginadas optimizadas con `AsNoTracking` e `Include(p => p.Pais)`.
+* [x] **Aplicación:**
+  - DTOs dedicados: `CrearPacienteDto`, `ActualizarPacienteDto`, `PacienteDto`, `PacienteFiltroDto`, `CambiarEstadoPacienteDto`.
+  - Validadores FluentValidation:
+    - `CrearPacienteValidator`: DNI obligatorio (máx 20), fecha de nacimiento en el pasado, código ISO-3 de país de 3 caracteres, email válido obligatorio (máx 150) y domicilio obligatorio (máx 150).
+    - `ActualizarPacienteValidator`: Formato y obligatoriedad en modificaciones.
+  - Servicio `PacienteService` con validación de existencia de país en catálogo y unicidad de DNI (HTTP 400 `BusinessRuleException`).
+* [x] **API y Presentación:**
+  - Endpoints RESTful en `PacientesController` (`/api/v1/pacientes`):
+    - `GET /api/v1/pacientes`: Consulta paginada con filtros por texto (`nombre`, `apellido`, `dni`), `idPais` y `soloActivos`.
+    - `GET /api/v1/pacientes/{id}`: Detalle del paciente por ID.
+    - `GET /api/v1/pacientes/dni/{dni}`: Búsqueda rápida por DNI.
+    - `POST /api/v1/pacientes`: Alta de paciente con respuesta HTTP 201 Created y encabezado `Location`.
+    - `PUT /api/v1/pacientes/{id}`: Actualización de datos personales y de contacto.
+    - `PATCH /api/v1/pacientes/{id}/estado`: Toggle de estado activo / reactivación.
+    - `DELETE /api/v1/pacientes/{id}`: Baja lógica conforme al estándar RESTful (HTTP 204 No Content).
+* [x] **Pruebas Automatizadas:**
+  - Cobertura total de 102 pruebas automáticas en la solución (100% aprobadas en xUnit).
+  - Cobertura de criterios Gherkin para registro exitoso, control de DNI duplicado, búsqueda por DNI, validación de país, cálculo de edad y baja lógica.
 
 ---
 

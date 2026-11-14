@@ -25,6 +25,21 @@ public class CatalogoRepository : ICatalogoRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<Pais?> ObtenerPaisPorIdAsync(string idPais, CancellationToken cancellationToken = default)
+    {
+        var codigo = idPais.Trim().ToUpper();
+        return await _context.Paises
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.IdPais == codigo, cancellationToken);
+    }
+
+    public async Task<bool> ExistePaisAsync(string idPais, CancellationToken cancellationToken = default)
+    {
+        var codigo = idPais.Trim().ToUpper();
+        return await _context.Paises
+            .AnyAsync(p => p.IdPais == codigo, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Especialidad>> ObtenerEspecialidadesAsync(bool? soloActivas = null, CancellationToken cancellationToken = default)
     {
         var query = _context.Especialidades.AsNoTracking();

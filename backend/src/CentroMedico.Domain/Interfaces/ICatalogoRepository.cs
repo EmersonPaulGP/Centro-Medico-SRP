@@ -8,6 +8,8 @@ namespace CentroMedico.Domain.Interfaces;
 public interface ICatalogoRepository
 {
     Task<IReadOnlyList<Pais>> ObtenerPaisesAsync(CancellationToken cancellationToken = default);
+    Task<Pais?> ObtenerPaisPorIdAsync(string idPais, CancellationToken cancellationToken = default);
+    Task<bool> ExistePaisAsync(string idPais, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Especialidad>> ObtenerEspecialidadesAsync(bool? soloActivas = null, CancellationToken cancellationToken = default);
     Task<Especialidad?> ObtenerEspecialidadPorIdAsync(int idEspecialidad, CancellationToken cancellationToken = default);
     Task<bool> ExisteEspecialidadConNombreAsync(string nombre, CancellationToken cancellationToken = default);

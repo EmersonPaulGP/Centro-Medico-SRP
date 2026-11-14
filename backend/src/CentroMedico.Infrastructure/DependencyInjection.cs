@@ -20,6 +20,7 @@ public static class DependencyInjection
         // Registro de repositorios de infraestructura
         services.AddScoped<ICatalogoRepository, CatalogoRepository>();
         services.AddScoped<IMedicoRepository, MedicoRepository>();
+        services.AddScoped<IPacienteRepository, PacienteRepository>();
 
         return services;
     }

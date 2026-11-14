@@ -14,6 +14,7 @@ public static class DependencyInjection
 
         services.AddScoped<ICatalogoService, CatalogoService>();
         services.AddScoped<IMedicoService, MedicoService>();
+        services.AddScoped<IPacienteService, PacienteService>();
 
         return services;
     }

@@ -185,6 +185,20 @@ public class FakeCatalogoRepository : ICatalogoRepository
         return Task.FromResult(list);
     }
 
+    public Task<Pais?> ObtenerPaisPorIdAsync(string idPais, CancellationToken cancellationToken = default)
+    {
+        var codigo = idPais.Trim().ToUpper();
+        var pais = Paises.FirstOrDefault(p => p.IdPais.Equals(codigo, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(pais);
+    }
+
+    public Task<bool> ExistePaisAsync(string idPais, CancellationToken cancellationToken = default)
+    {
+        var codigo = idPais.Trim().ToUpper();
+        var existe = Paises.Any(p => p.IdPais.Equals(codigo, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(existe);
+    }
+
     public Task<IReadOnlyList<Especialidad>> ObtenerEspecialidadesAsync(bool? soloActivas = null, CancellationToken cancellationToken = default)
     {
         var query = Especialidades.AsEnumerable();
