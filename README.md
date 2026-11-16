@@ -199,6 +199,37 @@ Manejadas automáticamente por el `GlobalExceptionHandlerMiddleware` sin exponer
   - Cobertura total ampliada a 130 pruebas automáticas en la solución (100% aprobadas en xUnit).
   - Verificación de criterios Gherkin para registro exitoso, control de formato de grupo sanguíneo, manejo de paciente inexistente, valores por defecto y actualización de antecedentes.
 
+### Feature 006: Gestión y Agendamiento de Turnos Médicos
+* [x] **Dominio:**
+  - Entidad `Turno` que modela citas médicas (`idPaciente`, `idMedico`, `fechaTurno`, `idEstado`, `observacion`, auditoría) con relaciones hacia `Paciente`, `Medico` y `TurnoEstado`.
+  - Enum `EstadoTurnoEnum` con estados tipados: `Pendiente (0)`, `Realizado (1)`, `Cancelado (2)`, `Rechazado (3)`, `Postergado (4)`, `Anulado (5)`, `Derivado (6)`.
+  - Contrato `ITurnoRepository` con soporte para verificación de solapamiento en agenda médica (`ExisteConflictoHorarioAsync`), detalle con entidades vinculadas, agenda paginada y persistencia.
+* [x] **Infraestructura:**
+  - Mapeo Fluent API `TurnoConfiguration` con índice compuesto optimizado en `(idMedico, fechaTurno)`, claves foráneas restringidas y valores por defecto SQL (`DF_Turno_Estado`, `SYSDATETIME()`).
+  - Registro de `DbSet<Turno>` en `CentroMedicoDbContext`.
+  - Implementación `TurnoRepository` con lógica de exclusión de estados cancelados/anulados para conflictos horarios y filtros dinámicos por médico, paciente, fechas y estado.
+* [x] **Aplicación:**
+  - DTOs dedicados: `AgendarTurnoDto`, `ActualizarEstadoTurnoDto`, `CancelarTurnoDto`, `TurnoDetalleDto` y `TurnoFiltroAgendaDto`.
+  - Validadores FluentValidation:
+    - `AgendarTurnoValidator`: validación de IDs positivos, fecha requerida y no pasada remota, longitud de observación.
+    - `CancelarTurnoValidator`: motivo de cancelación obligatorio (mínimo 5 y máximo 500 caracteres).
+    - `ActualizarEstadoTurnoValidator`: estados válidos (rango 0 a 6).
+  - Servicio `TurnoService` coordinando reglas de negocio estrictas:
+    - Validación de existencia y estado activo obligatorio tanto para el paciente como para el médico (HTTP 400 `BusinessRuleException` o HTTP 404 `NotFoundException`).
+    - Regla de conflicto de agenda dura: prevención de citas activas simultáneas para el mismo profesional (HTTP 400).
+    - Cancelación de turno con motivo justificado y liberación automática del horario para nuevas reservas.
+    - Control de transiciones de estado e imposibilidad de cancelar o modificar citas ya realizadas.
+* [x] **API y Presentación:**
+  - Endpoints RESTful en `TurnosController` (`/api/v1/turnos`):
+    - `GET /api/v1/turnos`: Consulta paginada de agenda con filtros por médico, paciente, rango de fechas y estado.
+    - `GET /api/v1/turnos/{id}`: Detalle completo del turno con datos del paciente, médico y estado.
+    - `POST /api/v1/turnos`: Agendamiento de nueva cita médica con respuesta HTTP 201 Created y encabezado `Location`.
+    - `PATCH /api/v1/turnos/{id}/estado`: Transición controlada del estado del turno.
+    - `POST /api/v1/turnos/{id}/cancelar`: Cancelación formal con motivo y liberación horaria.
+* [x] **Pruebas Automatizadas:**
+  - Cobertura total de 161 pruebas automáticas en la solución (100% aprobadas en xUnit).
+  - Verificación completa de criterios Gherkin: agendamiento exitoso en estado pendiente, detección de conflicto de horario en la agenda médica, y cancelación con liberación de horario para nuevas reservas.
+
 ---
 
 ## 💻 6. Cómo Ejecutar el Proyecto y Pruebas
@@ -233,3 +264,4 @@ dotnet run --launch-profile http
 * **Catálogos:** `http://localhost:5235/api/v1/catalogos`
 * **Médicos:** `http://localhost:5235/api/v1/medicos`
 * **Pacientes y Antecedentes:** `http://localhost:5235/api/v1/pacientes` (y `/api/v1/pacientes/{id}/antecedentes`)
+* **Turnos y Agenda:** `http://localhost:5235/api/v1/turnos`
