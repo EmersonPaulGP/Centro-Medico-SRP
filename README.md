@@ -230,6 +230,32 @@ Manejadas automáticamente por el `GlobalExceptionHandlerMiddleware` sin exponer
   - Cobertura total de 161 pruebas automáticas en la solución (100% aprobadas en xUnit).
   - Verificación completa de criterios Gherkin: agendamiento exitoso en estado pendiente, detección de conflicto de horario en la agenda médica, y cancelación con liberación de horario para nuevas reservas.
 
+### Feature 007: Historia Clínica y Registro de Consultas Médicas
+* [x] **Dominio:**
+  - Entidad `Historia` que documenta evoluciones médicas (`idPaciente`, `idMedico`, `idTurno`, `fechaHistoria`, `diagnostico`, `observacion`, `fechaAlta`) con relaciones hacia `Paciente`, `Medico` y `Turno`.
+  - Contrato `IHistoriaRepository` con métodos para registrar evoluciones, consultar detalle e indexar la línea de tiempo cronológica por paciente.
+  - Regla de inmutabilidad clínica: conservación histórica estricta sin borrado físico.
+* [x] **Infraestructura:**
+  - Mapeo Fluent API `HistoriaConfiguration` con clave primaria identity, restricciones de FK restrictivas, tipos `datetime2(0)`, `varchar(250)`, `varchar(max)` e índice compuesto `(idPaciente, fechaHistoria)` para optimización de consultas temporales.
+  - Registro de `DbSet<Historia>` en `CentroMedicoDbContext`.
+  - Implementación `HistoriaRepository` con consultas paginadas ordenadas por `FechaHistoria DESC` y filtros por médico, fechas y término de búsqueda.
+* [x] **Aplicación:**
+  - DTOs dedicados: `CrearHistoriaDto`, `HistoriaDetalleDto` e `HistoriaFiltroDto`.
+  - Validador FluentValidation `CrearHistoriaValidator`: obligatoriedad de observación clínica (mínimo 10 caracteres), IDs mayores a cero y longitud máxima de diagnóstico.
+  - Servicio `HistoriaService` con lógica transaccional:
+    - Validación de existencia y estado activo de paciente y médico.
+    - Validación de pertenencia del turno al paciente y médico indicados, impidiendo asociar turnos cancelados o anulados.
+    - Transición atómica del estado del turno asociado a `1 (Realizado)`.
+    - Consulta de la línea de tiempo completa del paciente con ordenamiento cronológico descendente.
+* [x] **API y Presentación:**
+  - Endpoints RESTful en `HistoriasClinicasController` (`/api/v1/historias`):
+    - `POST /api/v1/historias`: Asienta una nueva evolución médica (HTTP 201 Created con encabezado `Location`) y actualiza el turno a realizado de forma automática.
+    - `GET /api/v1/historias/{id}`: Obtiene el detalle de una evolución clínica por su ID.
+    - `GET /api/v1/pacientes/{idPaciente}/historia`: Consulta paginada de la historia clínica cronológica de un paciente.
+* [x] **Pruebas Automatizadas:**
+  - Cobertura total ampliada a 188 pruebas automáticas en la solución (100% aprobadas en xUnit).
+  - Verificación completa de criterios Gherkin: registro exitoso de evolución con cambio automático de turno a Realizado (1), y consulta de historial clínico ordenado cronológicamente de la más reciente a la más antigua.
+
 ---
 
 ## 💻 6. Cómo Ejecutar el Proyecto y Pruebas
@@ -265,3 +291,4 @@ dotnet run --launch-profile http
 * **Médicos:** `http://localhost:5235/api/v1/medicos`
 * **Pacientes y Antecedentes:** `http://localhost:5235/api/v1/pacientes` (y `/api/v1/pacientes/{id}/antecedentes`)
 * **Turnos y Agenda:** `http://localhost:5235/api/v1/turnos`
+* **Historia Clínica:** `http://localhost:5235/api/v1/historias` (y `/api/v1/pacientes/{id}/historia`)
