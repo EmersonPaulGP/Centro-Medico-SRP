@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<ICatalogoRepository, CatalogoRepository>();
         services.AddScoped<IMedicoRepository, MedicoRepository>();
         services.AddScoped<IPacienteRepository, PacienteRepository>();
+        services.AddScoped<IPacienteInfoRepository, PacienteInfoRepository>();
 
         return services;
     }

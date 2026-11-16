@@ -25,6 +25,11 @@ public class Paciente
     public Pais Pais { get; set; } = null!;
 
     /// <summary>
+    /// Navegación a la ficha de antecedentes clínicos del paciente (1 a 1).
+    /// </summary>
+    public PacienteInfo? PacienteInfo { get; set; }
+
+    /// <summary>
     /// Edad calculada a partir de la fecha de nacimiento.
     /// </summary>
     public int Edad

@@ -177,6 +177,28 @@ Manejadas automáticamente por el `GlobalExceptionHandlerMiddleware` sin exponer
   - Cobertura total de 102 pruebas automáticas en la solución (100% aprobadas en xUnit).
   - Cobertura de criterios Gherkin para registro exitoso, control de DNI duplicado, búsqueda por DNI, validación de país, cálculo de edad y baja lógica.
 
+### Feature 005: Antecedentes Clínicos del Paciente (PacienteInfo)
+* [x] **Dominio:**
+  - Entidad `PacienteInfo` que modela la ficha clínica base (condición diabética, implantes, alergias, grupo sanguíneo y auditoría `fechaModificacion`) con relación 1 a 1 hacia `Paciente`.
+  - Contrato de repositorio desacoplado `IPacienteInfoRepository` con métodos para consulta y persistencia atómica (Upsert).
+* [x] **Infraestructura:**
+  - Mapeo Fluent API en `PacienteInfoConfiguration` con `idPaciente` como clave primaria y foránea referenciando a `Paciente` con eliminación en cascada (`ON DELETE CASCADE`).
+  - Registro de `DbSet<PacienteInfo>` en `CentroMedicoDbContext`.
+  - Implementación `PacienteInfoRepository` con lógica de consulta de solo lectura (`AsNoTracking`) y Upsert atómico para inserción o modificación.
+* [x] **Aplicación:**
+  - DTOs dedicados: `GuardarPacienteInfoDto` y `PacienteInfoDto`.
+  - Validador FluentValidation `GuardarPacienteInfoValidator`:
+    - Alergias con longitud máxima de 500 caracteres.
+    - Grupo sanguíneo validado contra el listado clínico permitido (`A+`, `A-`, `B+`, `B-`, `AB+`, `AB-`, `O+`, `O-` o nulo).
+  - Servicio `PacienteInfoService` con validación previa de existencia del paciente, valores por defecto en ficha no inicializada (RF-02) y emisión de `BusinessRuleException` (HTTP 400) ante grupos sanguíneos inválidos.
+* [x] **API y Presentación:**
+  - Endpoints RESTful integrados en `PacientesController` (`/api/v1/pacientes`):
+    - `GET /api/v1/pacientes/{idPaciente}/antecedentes`: Consulta de antecedentes clínicos (retorna valores por defecto si no existen).
+    - `PUT /api/v1/pacientes/{idPaciente}/antecedentes`: Creación o actualización (Upsert) de antecedentes con marca temporal UTC.
+* [x] **Pruebas Automatizadas:**
+  - Cobertura total ampliada a 130 pruebas automáticas en la solución (100% aprobadas en xUnit).
+  - Verificación de criterios Gherkin para registro exitoso, control de formato de grupo sanguíneo, manejo de paciente inexistente, valores por defecto y actualización de antecedentes.
+
 ---
 
 ## 💻 6. Cómo Ejecutar el Proyecto y Pruebas
@@ -210,3 +232,4 @@ dotnet run --launch-profile http
 * **Swagger UI:** `http://localhost:5235/swagger`
 * **Catálogos:** `http://localhost:5235/api/v1/catalogos`
 * **Médicos:** `http://localhost:5235/api/v1/medicos`
+* **Pacientes y Antecedentes:** `http://localhost:5235/api/v1/pacientes` (y `/api/v1/pacientes/{id}/antecedentes`)

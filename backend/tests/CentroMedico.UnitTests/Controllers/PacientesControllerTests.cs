@@ -11,12 +11,14 @@ namespace CentroMedico.UnitTests.Controllers;
 public class PacientesControllerTests
 {
     private readonly FakePacienteService _fakeService;
+    private readonly FakePacienteInfoService _fakeInfoService;
     private readonly PacientesController _controller;
 
     public PacientesControllerTests()
     {
         _fakeService = new FakePacienteService();
-        _controller = new PacientesController(_fakeService);
+        _fakeInfoService = new FakePacienteInfoService();
+        _controller = new PacientesController(_fakeService, _fakeInfoService);
     }
 
     [Fact]
@@ -129,6 +131,52 @@ public class PacientesControllerTests
 
         var noContentResult = Assert.IsType<NoContentResult>(actionResult);
         Assert.Equal(StatusCodes.Status204NoContent, noContentResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task ObtenerAntecedentes_DebeRetornar200Ok_ConPacienteInfoDto()
+    {
+        var actionResult = await _controller.ObtenerAntecedentes(10, CancellationToken.None);
+
+        var okResult = Assert.IsType<OkObjectResult>(actionResult);
+        Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+
+        var apiResponse = Assert.IsType<ApiResponse<PacienteInfoDto>>(okResult.Value);
+        Assert.True(apiResponse.Success);
+        Assert.NotNull(apiResponse.Data);
+        Assert.Equal(10, apiResponse.Data!.IdPaciente);
+    }
+
+    [Fact]
+    public async Task GuardarAntecedentes_DebeRetornar200Ok_ConPacienteInfoDto()
+    {
+        var dto = new GuardarPacienteInfoDto(true, false, "Penicilina", "O+");
+        var actionResult = await _controller.GuardarAntecedentes(10, dto, CancellationToken.None);
+
+        var okResult = Assert.IsType<OkObjectResult>(actionResult);
+        Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+
+        var apiResponse = Assert.IsType<ApiResponse<PacienteInfoDto>>(okResult.Value);
+        Assert.True(apiResponse.Success);
+        Assert.NotNull(apiResponse.Data);
+        Assert.Equal(10, apiResponse.Data!.IdPaciente);
+        Assert.True(apiResponse.Data.Diabetico);
+        Assert.Equal("Penicilina", apiResponse.Data.Alergias);
+    }
+}
+
+public class FakePacienteInfoService : IPacienteInfoService
+{
+    public Task<PacienteInfoDto> ObtenerPorPacienteIdAsync(int idPaciente, CancellationToken cancellationToken = default)
+    {
+        var dto = new PacienteInfoDto(idPaciente, false, false, null, null, null);
+        return Task.FromResult(dto);
+    }
+
+    public Task<PacienteInfoDto> GuardarOActualizarAsync(int idPaciente, GuardarPacienteInfoDto dto, CancellationToken cancellationToken = default)
+    {
+        var resultado = new PacienteInfoDto(idPaciente, dto.Diabetico, dto.Implantes, dto.Alergias, dto.GrupoSanguineo, DateTime.UtcNow);
+        return Task.FromResult(resultado);
     }
 }
 

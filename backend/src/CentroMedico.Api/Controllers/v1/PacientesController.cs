@@ -14,10 +14,19 @@ namespace CentroMedico.Api.Controllers.v1;
 public class PacientesController : ControllerBase
 {
     private readonly IPacienteService _pacienteService;
+    private readonly IPacienteInfoService _pacienteInfoService;
 
-    public PacientesController(IPacienteService pacienteService)
+    public PacientesController(
+        IPacienteService pacienteService,
+        IPacienteInfoService pacienteInfoService)
     {
         _pacienteService = pacienteService;
+        _pacienteInfoService = pacienteInfoService;
+    }
+
+    public PacientesController(IPacienteService pacienteService)
+        : this(pacienteService, null!)
+    {
     }
 
     /// <summary>
@@ -118,5 +127,38 @@ public class PacientesController : ControllerBase
     {
         await _pacienteService.BajaLogicaAsync(id, cancellationToken);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Consulta los antecedentes clínicos (ficha médica de base) de un paciente.
+    /// Si el paciente no posee antecedentes cargados, retorna valores por defecto (false / null).
+    /// </summary>
+    [HttpGet("{idPaciente:int}/antecedentes")]
+    [ProducesResponseType(typeof(ApiResponse<PacienteInfoDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ObtenerAntecedentes(
+        [FromRoute] int idPaciente,
+        CancellationToken cancellationToken)
+    {
+        var antecedentes = await _pacienteInfoService.ObtenerPorPacienteIdAsync(idPaciente, cancellationToken);
+        return Ok(ApiResponse<PacienteInfoDto>.Ok(antecedentes, "Antecedentes clínicos obtenidos exitosamente."));
+    }
+
+    /// <summary>
+    /// Registra o actualiza (Upsert) los antecedentes clínicos del paciente.
+    /// Valida existencia del paciente y formato del grupo sanguíneo.
+    /// </summary>
+    [HttpPut("{idPaciente:int}/antecedentes")]
+    [ProducesResponseType(typeof(ApiResponse<PacienteInfoDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> GuardarAntecedentes(
+        [FromRoute] int idPaciente,
+        [FromBody] GuardarPacienteInfoDto dto,
+        CancellationToken cancellationToken)
+    {
+        var resultado = await _pacienteInfoService.GuardarOActualizarAsync(idPaciente, dto, cancellationToken);
+        return Ok(ApiResponse<PacienteInfoDto>.Ok(resultado, "Antecedentes clínicos guardados exitosamente."));
     }
 }
