@@ -22,6 +22,7 @@ public class CentroMedicoDbContext : DbContext
     public DbSet<Turno> Turnos => Set<Turno>();
     public DbSet<Historia> Historias => Set<Historia>();
     public DbSet<Pago> Pagos => Set<Pago>();
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

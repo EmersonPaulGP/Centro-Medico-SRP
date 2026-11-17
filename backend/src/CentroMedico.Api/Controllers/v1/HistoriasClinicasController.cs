@@ -1,15 +1,19 @@
 using CentroMedico.Application.Common.Models;
 using CentroMedico.Application.DTOs.Historia;
 using CentroMedico.Application.Interfaces;
+using CentroMedico.Domain.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CentroMedico.Api.Controllers.v1;
 
 /// <summary>
 /// Endpoints RESTful para la gestión y consulta de la historia clínica y notas de evolución médica.
+/// Restringido a profesionales Médicos y Administradores.
 /// </summary>
 [ApiController]
 [Route("api/v1/historias")]
+[Authorize(Roles = $"{Roles.Administrador},{Roles.Medico}")]
 [Produces("application/json")]
 public class HistoriasClinicasController : ControllerBase
 {
@@ -42,7 +46,7 @@ public class HistoriasClinicasController : ControllerBase
     /// <summary>
     /// Obtiene el detalle de una evolución clínica por su identificador único.
     /// </summary>
-    [HttpGet("{id:int}", Name = nameof(ObtenerPorId))]
+    [HttpGet("{id:int}", Name = "ObtenerHistoriaPorId")]
     [ProducesResponseType(typeof(ApiResponse<HistoriaDetalleDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ObtenerPorId([FromRoute] int id, CancellationToken cancellationToken)

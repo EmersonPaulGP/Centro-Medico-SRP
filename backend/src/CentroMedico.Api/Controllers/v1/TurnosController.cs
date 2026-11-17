@@ -1,6 +1,8 @@
 using CentroMedico.Application.Common.Models;
 using CentroMedico.Application.DTOs.Turnos;
 using CentroMedico.Application.Interfaces;
+using CentroMedico.Domain.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CentroMedico.Api.Controllers.v1;
@@ -10,6 +12,7 @@ namespace CentroMedico.Api.Controllers.v1;
 /// </summary>
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize(Roles = $"{Roles.Administrador},{Roles.Recepcionista},{Roles.Medico}")]
 [Produces("application/json")]
 public class TurnosController : ControllerBase
 {

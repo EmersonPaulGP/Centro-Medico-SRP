@@ -2,6 +2,7 @@ using CentroMedico.Application.Interfaces;
 using CentroMedico.Domain.Interfaces;
 using CentroMedico.Infrastructure.Context;
 using CentroMedico.Infrastructure.Repositories;
+using CentroMedico.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,11 @@ public static class DependencyInjection
         services.AddScoped<IHistoriaRepository, HistoriaRepository>();
         services.AddScoped<IPagoRepository, PagoRepository>();
         services.AddScoped<IDashboardRepository, DashboardRepository>();
+        services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+
+        // Servicios de seguridad y autenticación
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
         return services;
     }

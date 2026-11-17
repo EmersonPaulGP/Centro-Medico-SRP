@@ -40,6 +40,16 @@ public class GlobalExceptionHandlerMiddleware
                 notFoundEx.Message,
                 null as List<ApiErrorItem>),
 
+            AuthenticationException authEx => (
+                HttpStatusCode.Unauthorized,
+                authEx.Message,
+                null as List<ApiErrorItem>),
+
+            UnauthorizedAccessException unauthorizedEx => (
+                HttpStatusCode.Unauthorized,
+                unauthorizedEx.Message,
+                null as List<ApiErrorItem>),
+
             BusinessRuleException businessEx => (
                 HttpStatusCode.BadRequest,
                 businessEx.Message,

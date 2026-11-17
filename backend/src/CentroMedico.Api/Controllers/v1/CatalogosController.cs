@@ -1,6 +1,8 @@
 using CentroMedico.Application.Common.Models;
 using CentroMedico.Application.DTOs.Catalogos;
 using CentroMedico.Application.Interfaces;
+using CentroMedico.Domain.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CentroMedico.Api.Controllers.v1;
@@ -10,6 +12,7 @@ namespace CentroMedico.Api.Controllers.v1;
 /// </summary>
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize]
 [Produces("application/json")]
 public class CatalogosController : ControllerBase
 {
@@ -77,8 +80,10 @@ public class CatalogosController : ControllerBase
 
     /// <summary>
     /// Registra una nueva especialidad médica en el sistema.
+    /// Restringido a Administrador.
     /// </summary>
     [HttpPost("especialidades")]
+    [Authorize(Roles = Roles.Administrador)]
     [ProducesResponseType(typeof(ApiResponse<EspecialidadDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]

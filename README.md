@@ -304,8 +304,44 @@ Manejadas automáticamente por el `GlobalExceptionHandlerMiddleware` sin exponer
     - `GET /api/v1/dashboard/recaudacion-mensual`: Retorna la serie histórica de ingresos mensuales del año (HTTP 200 OK).
     - `GET /api/v1/dashboard/proximos-turnos`: Retorna las próximas citas para el monitor de recepción (HTTP 200 OK).
 * [x] **Pruebas Automatizadas:**
-  - Cobertura total ampliada a 244 pruebas automáticas en la solución (100% aprobadas en xUnit).
+  - Cobertura total de pruebas automáticas en la solución (100% aprobadas en xUnit).
   - Verificación completa de criterios Gherkin: obtención exitosa de métricas ejecutivas calculadas y distribución porcentual de turnos por especialidad.
+
+### Feature 010: Autenticación y Autorización con JWT y Control de Acceso RBAC
+* [x] **Dominio:**
+  - Entidad pura `Usuario` con campos de identidad (`idUsuario`, `email`, `passwordHash`, `nombre`, `apellido`, `rol`, `activo`, `fechaAlta`).
+  - Constantes de roles de usuario del sistema en `Roles` (`Administrador`, `Medico`, `Recepcionista`) y método utilitario de validación `EsRolValido`.
+  - Excepción de seguridad de dominio `AuthenticationException` para gestión de credenciales inválidas o usuarios inactivos (HTTP 401).
+  - Contrato de repositorio de persistencia `IUsuarioRepository`.
+* [x] **Infraestructura y Seguridad:**
+  - Hasheador robusto de contraseñas `PasswordHasher` implementando algoritmo BCrypt (`BCrypt.Net-Next`) con factor de trabajo configurable.
+  - Generador y firmador de tokens JWT `JwtTokenGenerator` utilizando `System.IdentityModel.Tokens.Jwt` y `Microsoft.IdentityModel.Tokens` con claims estándar (`Sub`, `NameIdentifier`, `Email`, `Name`, `Role`, `Jti`) y expiración configurable.
+  - Configuración Fluent API `UsuarioConfiguration` con índice único en `email` y mapeo a tabla `dbo.Usuario`.
+  - Repositorio `UsuarioRepository` con operaciones de búsqueda por email (normalizado en minúsculas), id y existencia de correo.
+  - Actualización del script `CentroMedico.sql` con creación de la tabla `dbo.Usuario` y datos semilla (cuentas iniciales para `Administrador`, `Recepcionista` y `Medico` con contraseñas encriptadas con BCrypt).
+* [x] **Aplicación:**
+  - DTOs dedicados para seguridad y autenticación: `LoginRequestDto`, `LoginResponseDto`, `RegistroUsuarioDto` y `UsuarioPerfilDto`.
+  - Validadores FluentValidation: `LoginRequestValidator` (email válido y contraseña obligatoria) y `RegistroUsuarioValidator` (validación de formato de email, longitud mínima de contraseña de 6 caracteres y rol restringido a los permitidos).
+  - Contrato de servicio `IAuthService` e implementación `AuthService` gestionando el flujo de login con verificación BCrypt, emisión de JWT y perfil de usuario, registro con control de unicidad de email y consulta de perfil actual.
+* [x] **API y Presentación:**
+  - Configuración del pipeline de seguridad en `Program.cs` con `AddAuthentication(JwtBearerDefaults.AuthenticationScheme)`, validación estricta de emisor (`Issuer`), audiencia (`Audience`) y clave simétrica (`IssuerSigningKey`).
+  - Integración en Swagger/OpenAPI con candado de seguridad Bearer Token (`OpenApiSecurityScheme` y `OpenApiSecurityRequirement`).
+  - Manejador global `GlobalExceptionHandlerMiddleware` extendido para interceptar `AuthenticationException` y `UnauthorizedAccessException` respondiendo HTTP 401 con el formato estándar `ApiResponse`.
+  - Endpoints RESTful en `AuthController` (`/api/v1/auth`):
+    - `POST /api/v1/auth/login`: Autenticación con email y contraseña, retorno de JWT y perfil (HTTP 200 OK / HTTP 401 Unauthorized).
+    - `POST /api/v1/auth/registro`: Registro de nuevo usuario y rol RBAC, protegido para rol Administrador (HTTP 201 Created).
+    - `GET /api/v1/auth/me`: Consulta de perfil, rol y permisos del usuario actualmente autenticado extraído de los claims del JWT (HTTP 200 OK / HTTP 401 Unauthorized).
+  - Políticas de autorización aplicadas mediante atributos `[Authorize(Roles = "...")]` en los controladores sensibles:
+    - `DashboardController`: `[Authorize(Roles = Roles.Administrador)]`
+    - `HistoriasClinicasController`: `[Authorize(Roles = $"{Roles.Administrador},{Roles.Medico}")]`
+    - `MedicosController`: `[Authorize(Roles = $"{Roles.Administrador},{Roles.Recepcionista}")]` para consultas y `[Authorize(Roles = Roles.Administrador)]` para modificaciones.
+    - `PagosController`: `[Authorize(Roles = $"{Roles.Administrador},{Roles.Recepcionista}")]`
+    - `TurnosController`: `[Authorize(Roles = $"{Roles.Administrador},{Roles.Recepcionista},{Roles.Medico}")]`
+    - `PacientesController`: `[Authorize(Roles = $"{Roles.Administrador},{Roles.Recepcionista},{Roles.Medico}")]`
+    - `CatalogosController`: `[Authorize]` y `[Authorize(Roles = Roles.Administrador)]` para creación de especialidades.
+* [x] **Pruebas Automatizadas:**
+  - Cobertura total de pruebas automáticas en la solución con 280 pruebas (100% aprobadas en xUnit).
+  - Verificación de escenarios BDD / Gherkin para login exitoso, login con contraseña errónea (401), usuario inactivo, validaciones de DTOs, controladores y verificación criptográfica de tokens y hashes BCrypt.
 
 ---
 
@@ -338,6 +374,7 @@ dotnet run --launch-profile http
 ### Endpoints de Verificación:
 * **Health Check:** `http://localhost:5235/api/v1/health`
 * **Swagger UI:** `http://localhost:5235/swagger`
+* **Autenticación y Seguridad:** `http://localhost:5235/api/v1/auth/login` (y `/api/v1/auth/registro`, `/api/v1/auth/me`)
 * **Catálogos:** `http://localhost:5235/api/v1/catalogos`
 * **Médicos:** `http://localhost:5235/api/v1/medicos`
 * **Pacientes y Antecedentes:** `http://localhost:5235/api/v1/pacientes` (y `/api/v1/pacientes/{id}/antecedentes`)

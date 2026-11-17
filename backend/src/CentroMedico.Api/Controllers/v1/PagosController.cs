@@ -1,6 +1,8 @@
 using CentroMedico.Application.Common.Models;
 using CentroMedico.Application.DTOs.Pagos;
 using CentroMedico.Application.Interfaces;
+using CentroMedico.Domain.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CentroMedico.Api.Controllers.v1;
@@ -10,6 +12,7 @@ namespace CentroMedico.Api.Controllers.v1;
 /// </summary>
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize(Roles = $"{Roles.Administrador},{Roles.Recepcionista}")]
 [Produces("application/json")]
 public class PagosController : ControllerBase
 {
@@ -41,7 +44,7 @@ public class PagosController : ControllerBase
     /// <summary>
     /// Obtiene el detalle de un cobro por su identificador único.
     /// </summary>
-    [HttpGet("{id:int}", Name = nameof(ObtenerPorId))]
+    [HttpGet("{id:int}", Name = "ObtenerPagoPorId")]
     [ProducesResponseType(typeof(ApiResponse<PagoDetalleDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ObtenerPorId([FromRoute] int id, CancellationToken cancellationToken)

@@ -1,6 +1,8 @@
 using CentroMedico.Application.Common.Models;
 using CentroMedico.Application.DTOs.Medicos;
 using CentroMedico.Application.Interfaces;
+using CentroMedico.Domain.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CentroMedico.Api.Controllers.v1;
@@ -10,6 +12,7 @@ namespace CentroMedico.Api.Controllers.v1;
 /// </summary>
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize(Roles = $"{Roles.Administrador},{Roles.Recepcionista}")]
 [Produces("application/json")]
 public class MedicosController : ControllerBase
 {
@@ -47,6 +50,7 @@ public class MedicosController : ControllerBase
     /// Registra un nuevo profesional médico con al menos una especialidad médica inicial.
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = Roles.Administrador)]
     [ProducesResponseType(typeof(ApiResponse<MedicoDetalleDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)]
@@ -64,6 +68,7 @@ public class MedicosController : ControllerBase
     /// Actualiza la información personal y de contacto de un médico.
     /// </summary>
     [HttpPut("{id:int}")]
+    [Authorize(Roles = Roles.Administrador)]
     [ProducesResponseType(typeof(ApiResponse<MedicoDetalleDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -81,6 +86,7 @@ public class MedicosController : ControllerBase
     /// Realiza la baja lógica o reactivación del profesional médico.
     /// </summary>
     [HttpPatch("{id:int}/estado")]
+    [Authorize(Roles = Roles.Administrador)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CambiarEstado(
@@ -100,6 +106,7 @@ public class MedicosController : ControllerBase
     /// Realiza la baja lógica (activo = false) de un profesional médico según la convención RESTful DELETE.
     /// </summary>
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = Roles.Administrador)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DarDeBaja([FromRoute] int id, CancellationToken cancellationToken)
@@ -112,6 +119,7 @@ public class MedicosController : ControllerBase
     /// Asigna o reemplaza las especialidades médicas vinculadas a un médico.
     /// </summary>
     [HttpPut("{id:int}/especialidades")]
+    [Authorize(Roles = Roles.Administrador)]
     [ProducesResponseType(typeof(ApiResponse<MedicoDetalleDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -128,6 +136,7 @@ public class MedicosController : ControllerBase
     /// Asigna una especialidad médica adicional a un profesional médico existente.
     /// </summary>
     [HttpPost("{id:int}/especialidades")]
+    [Authorize(Roles = Roles.Administrador)]
     [ProducesResponseType(typeof(ApiResponse<MedicoDetalleDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -145,6 +154,7 @@ public class MedicosController : ControllerBase
     /// Remueve una especialidad médica específica asignada a un profesional médico.
     /// </summary>
     [HttpDelete("{id:int}/especialidades/{idEspecialidad:int}")]
+    [Authorize(Roles = Roles.Administrador)]
     [ProducesResponseType(typeof(ApiResponse<MedicoDetalleDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
