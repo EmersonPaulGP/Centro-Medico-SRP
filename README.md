@@ -286,6 +286,27 @@ Manejadas automáticamente por el `GlobalExceptionHandlerMiddleware` sin exponer
   - Cobertura total ampliada a 236 pruebas automáticas en la solución (100% aprobadas en xUnit).
   - Verificación completa de criterios Gherkin: registro exitoso de cobro en estado Aprobado (1), rechazo con código 400 Bad Request ante montos menores o iguales a cero, validación de métodos de pago y emisión de comprobantes.
 
+### Feature 009: Métricas Operativas y Dashboard Administrativo
+* [x] **Aplicación:**
+  - DTOs dedicados para analítica en tiempo real: `DashboardResumenDto`, `TurnosPorEspecialidadDto`, `RecaudacionMensualDto` y `TurnoResumenDto`.
+  - Contrato de repositorio analítico `IDashboardRepository` y servicio de aplicación `IDashboardService`.
+  - Servicio `DashboardService` que gestiona el cálculo de KPIs, agregaciones por mes/año y listado de citas prioritarias para recepción.
+* [x] **Infraestructura:**
+  - Implementación de alto rendimiento `DashboardRepository` con EF Core ejecutando consultas directas en modo `AsNoTracking()` sin sobrecarga de memoria.
+  - Consolidación de KPIs del día (turnos totales, pendientes y realizados) y del mes (facturación acumulada sumando cobros aprobados con estado 1, pacientes activos totales y tasa porcentual de cancelación de citas).
+  - Distribución de citas por especialidad médica calculando volumen total y porcentaje de demanda para gráficos en React.
+  - Agrupación histórica de recaudación mensual para los 12 meses del año calendario.
+  - Consulta de próximas citas del día para la vista rápida del personal de recepción.
+* [x] **API y Presentación:**
+  - Endpoints RESTful en `DashboardController` (`/api/v1/dashboard`):
+    - `GET /api/v1/dashboard/resumen`: Retorna el conjunto consolidado de KPIs ejecutivos y operativos (HTTP 200 OK).
+    - `GET /api/v1/dashboard/turnos-por-especialidad`: Retorna la distribución de citas por especialidad para gráficos de barras o pastel (HTTP 200 OK).
+    - `GET /api/v1/dashboard/recaudacion-mensual`: Retorna la serie histórica de ingresos mensuales del año (HTTP 200 OK).
+    - `GET /api/v1/dashboard/proximos-turnos`: Retorna las próximas citas para el monitor de recepción (HTTP 200 OK).
+* [x] **Pruebas Automatizadas:**
+  - Cobertura total ampliada a 244 pruebas automáticas en la solución (100% aprobadas en xUnit).
+  - Verificación completa de criterios Gherkin: obtención exitosa de métricas ejecutivas calculadas y distribución porcentual de turnos por especialidad.
+
 ---
 
 ## 💻 6. Cómo Ejecutar el Proyecto y Pruebas
@@ -323,3 +344,4 @@ dotnet run --launch-profile http
 * **Turnos y Agenda:** `http://localhost:5235/api/v1/turnos`
 * **Historia Clínica:** `http://localhost:5235/api/v1/historias` (y `/api/v1/pacientes/{id}/historia`)
 * **Pagos y Facturación:** `http://localhost:5235/api/v1/pagos` (y `/api/v1/pagos/{id}/comprobante`, `/api/v1/pacientes/{id}/pagos`)
+* **Dashboard y Analítica:** `http://localhost:5235/api/v1/dashboard/resumen` (y `/turnos-por-especialidad`, `/recaudacion-mensual`, `/proximos-turnos`)

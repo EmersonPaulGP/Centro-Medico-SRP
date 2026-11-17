@@ -1,3 +1,4 @@
+using CentroMedico.Application.Interfaces;
 using CentroMedico.Domain.Interfaces;
 using CentroMedico.Infrastructure.Context;
 using CentroMedico.Infrastructure.Repositories;
@@ -25,6 +26,7 @@ public static class DependencyInjection
         services.AddScoped<ITurnoRepository, TurnoRepository>();
         services.AddScoped<IHistoriaRepository, HistoriaRepository>();
         services.AddScoped<IPagoRepository, PagoRepository>();
+        services.AddScoped<IDashboardRepository, DashboardRepository>();
 
         return services;
     }
