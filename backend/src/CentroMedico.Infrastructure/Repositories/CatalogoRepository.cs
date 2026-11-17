@@ -91,6 +91,19 @@ public class CatalogoRepository : ICatalogoRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<Concepto?> ObtenerConceptoPorIdAsync(byte idConcepto, CancellationToken cancellationToken = default)
+    {
+        return await _context.Conceptos
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.IdConcepto == idConcepto, cancellationToken);
+    }
+
+    public async Task<bool> ExisteConceptoAsync(byte idConcepto, CancellationToken cancellationToken = default)
+    {
+        return await _context.Conceptos
+            .AnyAsync(c => c.IdConcepto == idConcepto, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<PagoEstado>> ObtenerEstadosPagoAsync(CancellationToken cancellationToken = default)
     {
         return await _context.PagosEstados

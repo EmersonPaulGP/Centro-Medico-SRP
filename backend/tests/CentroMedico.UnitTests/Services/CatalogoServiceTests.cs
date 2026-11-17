@@ -241,6 +241,18 @@ public class FakeCatalogoRepository : ICatalogoRepository
         return Task.FromResult(list);
     }
 
+    public Task<Concepto?> ObtenerConceptoPorIdAsync(byte idConcepto, CancellationToken cancellationToken = default)
+    {
+        var c = Conceptos.FirstOrDefault(x => x.IdConcepto == idConcepto);
+        return Task.FromResult(c);
+    }
+
+    public Task<bool> ExisteConceptoAsync(byte idConcepto, CancellationToken cancellationToken = default)
+    {
+        var existe = Conceptos.Any(x => x.IdConcepto == idConcepto);
+        return Task.FromResult(existe);
+    }
+
     public Task<IReadOnlyList<PagoEstado>> ObtenerEstadosPagoAsync(CancellationToken cancellationToken = default)
     {
         IReadOnlyList<PagoEstado> list = PagosEstados.OrderBy(p => p.IdEstado).ToList();

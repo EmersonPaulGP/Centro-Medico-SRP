@@ -16,5 +16,7 @@ public interface ICatalogoRepository
     Task<Especialidad> CrearEspecialidadAsync(Especialidad especialidad, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<TurnoEstado>> ObtenerEstadosTurnoAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Concepto>> ObtenerConceptosPagoAsync(CancellationToken cancellationToken = default);
+    Task<Concepto?> ObtenerConceptoPorIdAsync(byte idConcepto, CancellationToken cancellationToken = default);
+    Task<bool> ExisteConceptoAsync(byte idConcepto, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<PagoEstado>> ObtenerEstadosPagoAsync(CancellationToken cancellationToken = default);
 }

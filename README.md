@@ -256,6 +256,36 @@ Manejadas automáticamente por el `GlobalExceptionHandlerMiddleware` sin exponer
   - Cobertura total ampliada a 188 pruebas automáticas en la solución (100% aprobadas en xUnit).
   - Verificación completa de criterios Gherkin: registro exitoso de evolución con cambio automático de turno a Realizado (1), y consulta de historial clínico ordenado cronológicamente de la más reciente a la más antigua.
 
+### Feature 008: Gestión de Pagos y Facturación
+* [x] **Dominio:**
+  - Entidad `Pago` que documenta cobros y transacciones (`idPaciente`, `idTurno`, `idConcepto`, `fecha`, `monto`, `idEstado`, `metodoPago`, `observacion`, `fechaAlta`) con relaciones hacia `Paciente`, `Turno`, `Concepto` y `PagoEstado`.
+  - Enum `EstadoPagoEnum` (Pendiente=0, Aprobado=1, Rechazado=2, Reembolsado=3).
+  - Contrato `IPagoRepository` con métodos para agregar pagos, consultar por identificador con detalle legible y filtrado avanzado para arqueo de caja.
+  - Métodos adicionales en `ICatalogoRepository` para validación y consulta de conceptos de pago (`ObtenerConceptoPorIdAsync`, `ExisteConceptoAsync`).
+* [x] **Infraestructura:**
+  - Mapeo Fluent API `PagoConfiguration` con clave primaria identity, precisión decimal `decimal(18,2)`, restricciones FK restrictivas, tipos `datetime2(0)`, `varchar(50)`, `varchar(1000)` e índice compuesto `(idPaciente, fecha)` para optimización de consultas.
+  - Registro de `DbSet<Pago>` en `CentroMedicoDbContext`.
+  - Implementación `PagoRepository` con soporte para consultas de arqueo por rango de fechas, paciente, concepto y estado.
+* [x] **Aplicación:**
+  - DTOs dedicados: `RegistrarPagoDto`, `PagoDetalleDto`, `ComprobantePagoDto` y `PagoFiltroDto`.
+  - Validador FluentValidation `RegistrarPagoValidator`: validación estricta de monto mayor a cero, métodos de pago permitidos (`Efectivo`, `Tarjeta de Débito`, `Tarjeta de Crédito`, `Transferencia Bancaria`, `Mercado Pago / Billetera Virtual`), IDs mayores a cero y longitud máxima de observación.
+  - Servicio `PagoService`:
+    - Validación de existencia y estado activo del paciente.
+    - Validación de existencia del concepto de pago en el catálogo.
+    - Validación de turno asociado (pertenencia al paciente, turnos no cancelados ni anulados).
+    - Registro de cobro con estado inicial `1 (Aprobado)` y fecha actual.
+    - Generación y emisión de comprobantes digitales de pago con desglose fiscal y datos del centro médico.
+* [x] **API y Presentación:**
+  - Endpoints RESTful en `PagosController` (`/api/v1/pagos`):
+    - `POST /api/v1/pagos`: Registra un cobro exitoso (HTTP 201 Created con encabezado `Location`).
+    - `GET /api/v1/pagos/{id}`: Obtiene el detalle legible del cobro por su ID.
+    - `GET /api/v1/pagos/{id}/comprobante`: Emite el comprobante digital fiscal del pago.
+    - `GET /api/v1/pagos`: Consulta paginada con filtros por fecha, concepto, paciente y estado (arqueo de caja).
+    - `GET /api/v1/pacientes/{idPaciente}/pagos`: Consulta el historial de pagos de un paciente específico.
+* [x] **Pruebas Automatizadas:**
+  - Cobertura total ampliada a 236 pruebas automáticas en la solución (100% aprobadas en xUnit).
+  - Verificación completa de criterios Gherkin: registro exitoso de cobro en estado Aprobado (1), rechazo con código 400 Bad Request ante montos menores o iguales a cero, validación de métodos de pago y emisión de comprobantes.
+
 ---
 
 ## 💻 6. Cómo Ejecutar el Proyecto y Pruebas
@@ -292,3 +322,4 @@ dotnet run --launch-profile http
 * **Pacientes y Antecedentes:** `http://localhost:5235/api/v1/pacientes` (y `/api/v1/pacientes/{id}/antecedentes`)
 * **Turnos y Agenda:** `http://localhost:5235/api/v1/turnos`
 * **Historia Clínica:** `http://localhost:5235/api/v1/historias` (y `/api/v1/pacientes/{id}/historia`)
+* **Pagos y Facturación:** `http://localhost:5235/api/v1/pagos` (y `/api/v1/pagos/{id}/comprobante`, `/api/v1/pacientes/{id}/pagos`)
